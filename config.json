@@ -1,11 +1,11 @@
 {
 	"edgar_crawler": {
-		"start_year": 2021,
-		"end_year": 2021,
+		"start_year": 2002,
+		"end_year": 2023,
 		"quarters": [1, 2, 3, 4],
-		"filing_types": ["10-K", "10-K405", "10-KT"],
+		"filing_types": ["10-K"],
 		"cik_tickers": [],
-		"user_agent": "Your name (your email)",
+		"user_agent": "myself@gmail.com",
 		"raw_filings_folder": "RAW_FILINGS",
 		"indices_folder": "INDICES",
 		"filings_metadata_file": "FILINGS_METADATA.csv",
