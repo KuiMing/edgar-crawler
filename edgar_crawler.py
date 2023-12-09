@@ -27,7 +27,7 @@ except ImportError:  # Python 3.5+
 		pass
 
 # Import constants from the project's __init__ file
-from __init__ import DATASET_DIR, LOGGING_DIR
+from __init__ import DATASET_DIR, LOGGING_DIR, HTM_DIR
 
 # Set urllib3 logging level to critical to reduce noise
 urllib3_log = logging.getLogger("urllib3")
@@ -39,6 +39,26 @@ LOGGER = Logger(name=os.path.splitext(os.path.basename(os.path.abspath(__file__)
 # Log where the logs are being saved
 LOGGER.info(f'Saving log to {os.path.join(LOGGING_DIR)}\n')
 
+res = requests.get(
+	'https://www.sec.gov/files/company_tickers.json', 
+	headers={'User-agent':"myself@gmail.com"}
+				   )
+SYMBOL_LIST = json.loads(res.content)
+SYMBOL_LIST = pd.DataFrame(SYMBOL_LIST).T
+SYMBOL_LIST['cik_str'] = SYMBOL_LIST.cik_str.astype(str)
+
+def get_all_tickers():
+    '''
+    Function to fetch the list of stocks in various US market indices
+    '''
+    sp500 = pd.read_html('https://en.wikipedia.org/wiki/List_of_S%26P_500_companies')
+    ticker_list_500 = sp500[0].Symbol.to_list()
+    sp400 = pd.read_html('https://en.wikipedia.org/wiki/List_of_S%26P_400_companies')
+    ticker_list_400 = sp400[0].Symbol.to_list()
+    sp600 = pd.read_html('https://en.wikipedia.org/wiki/List_of_S%26P_600_companies')
+    ticker_list_600 = sp600[0].Symbol.to_list()
+    ticker_list = list(set(ticker_list_500 + ticker_list_400 + ticker_list_600))
+    return ticker_list
 
 def main():
 	"""
@@ -92,12 +112,12 @@ def main():
 
 			if os.path.isfile(filepath):
 				tsv_filenames.append(filepath)
-
+	tickers = get_all_tickers()
 	# Get the indices that are specific to your needs
 	df = get_specific_indices(
 		tsv_filenames=tsv_filenames,
 		filing_types=config['filing_types'],
-		cik_tickers=config['cik_tickers'],
+		cik_tickers=tickers,
 		user_agent=config['user_agent']
 	)
 
@@ -388,6 +408,15 @@ def crawl(
 	Returns:
 		pd.Series: The series with the extracted data.
 	"""
+	
+	symbol = SYMBOL_LIST[SYMBOL_LIST.cik_str == series.CIK].ticker.values[0]
+	ar_date = series.Date
+	symbol_folder = os.path.join(HTM_DIR, symbol)
+	if not os.path.exists(symbol_folder):
+		os.mkdir(symbol_folder)
+	symbol_ar_date_folder = os.path.join(symbol_folder, ar_date)
+	if not os.path.exists(symbol_ar_date_folder):
+		os.mkdir(symbol_ar_date_folder)
 
 	html_index = series['html_index']
 
@@ -588,8 +617,11 @@ def crawl(
 			if link_to_download is not None:
 				filing_type = re.sub(r"[\-/\\]", '', filing_type)
 				accession_num = os.path.splitext(os.path.basename(series['complete_text_file_link']))[0]
-				filename = f"{str(series['CIK'])}_{filing_type}_{period_of_report[:4]}_{accession_num}.{file_extension}"
-
+				# filename = f"{str(series['CIK'])}_{filing_type}_{period_of_report[:4]}_{accession_num}.{file_extension}"
+				
+				filename = os.path.join(symbol_ar_date_folder, ar_date + ".htm")
+				if os.path.exists(filename):
+					return None
 				# Download the file
 				success = download(
 					url=link_to_download,
