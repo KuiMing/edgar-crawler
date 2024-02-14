@@ -1,15 +1,16 @@
 {
 	"edgar_crawler": {
-		"start_year": 2002,
+		"start_year": 2023,
 		"end_year": 2023,
 		"quarters": [1, 2, 3, 4],
 		"filing_types": ["10-K"],
-		"cik_tickers": [],
+		"cik_tickers": ["T"],
 		"user_agent": "myself@gmail.com",
 		"raw_filings_folder": "RAW_FILINGS",
 		"indices_folder": "INDICES",
 		"filings_metadata_file": "FILINGS_METADATA.csv",
-		"skip_present_indices": true
+		"skip_present_indices": true,
+		"htm_root":""
 	},
 	"extract_items": {
 		"raw_filings_folder": "RAW_FILINGS",

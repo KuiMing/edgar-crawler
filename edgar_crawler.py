@@ -38,7 +38,8 @@ LOGGER = Logger(name=os.path.splitext(os.path.basename(os.path.abspath(__file__)
 
 # Log where the logs are being saved
 LOGGER.info(f'Saving log to {os.path.join(LOGGING_DIR)}\n')
-
+with open('config.json') as fin:
+		config = json.load(fin)['edgar_crawler']
 res = requests.get(
 	'https://www.sec.gov/files/company_tickers.json', 
 	headers={'User-agent':"myself@gmail.com"}
@@ -112,7 +113,10 @@ def main():
 
 			if os.path.isfile(filepath):
 				tsv_filenames.append(filepath)
-	tickers = get_all_tickers()
+	if len(config['cik_tickers']) == 0:
+		tickers = get_all_tickers()
+	else:
+		tickers = config['cik_tickers']
 	# Get the indices that are specific to your needs
 	df = get_specific_indices(
 		tsv_filenames=tsv_filenames,
@@ -162,13 +166,15 @@ def main():
 
 	# Initialize list for final series
 	final_series = []
+	print(config['htm_root'])
 	for series in tqdm(list_of_series, ncols=100):
 		# Crawl each series to download and save the filing
 		series = crawl(
 			series=series,
 			filing_types=config['filing_types'],
 			raw_filings_folder=raw_filings_folder,
-			user_agent=config['user_agent']
+			user_agent=config['user_agent'],
+			htm_root=config['htm_root']
 		)
 		# If the series was successfully downloaded, append it to the final series
 		if series is not None:
@@ -393,7 +399,8 @@ def crawl(
 	filing_types: List[str],
 	series: pd.Series,
 	raw_filings_folder: str,
-	user_agent: str
+	user_agent: str,
+	htm_root: str=""
 ) -> pd.Series:
 	"""
 	This function is responsible for crawling the EDGAR HTML indexes and extracting required details.
@@ -411,7 +418,14 @@ def crawl(
 	
 	symbol = SYMBOL_LIST[SYMBOL_LIST.cik_str == series.CIK].ticker.values[0]
 	ar_date = series.Date
-	symbol_folder = os.path.join(HTM_DIR, symbol)
+	if htm_root == "":
+		symbol_folder = os.path.join(HTM_DIR, symbol)
+	else:
+		if not os.path.isabs(htm_root):
+			htm_root = os.path.join(DATASET_DIR, htm_root)
+		if not os.path.exists(htm_root):
+			os.mkdir(htm_root)
+		symbol_folder = os.path.join(htm_root, symbol)
 	if not os.path.exists(symbol_folder):
 		os.mkdir(symbol_folder)
 	symbol_ar_date_folder = os.path.join(symbol_folder, ar_date)
@@ -662,7 +676,6 @@ def download(
 
 	# Create the full file path
 	filepath = os.path.join(download_folder, filename)
-
 	try:
 		# Initialize a flag to track if retries are exceeded
 		retries_exceeded = True
@@ -695,7 +708,6 @@ def download(
 	# If the download was successful, save the file
 	with open(filepath, 'wb') as f:
 		f.write(request.content)
-
 	# Uncomment the following lines to check the MD5 hash of the downloaded file
 	# if hashlib.md5(open(filepath, 'rb').read()).hexdigest() != headers._headers[1][1].strip('"'):
 	# 	LOGGER.info(f'Wrong MD5 hash for file: {abs_filename} - {url}')
