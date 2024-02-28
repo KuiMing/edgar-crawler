@@ -12,6 +12,7 @@ import logging
 
 from bs4 import BeautifulSoup
 from datetime import datetime
+# pylint: disable=import-error
 from logger import Logger
 from requests.adapters import HTTPAdapter
 from requests.exceptions import RequestException, HTTPError, ConnectionError, Timeout, RetryError
@@ -27,6 +28,7 @@ except ImportError:  # Python 3.5+
 		pass
 
 # Import constants from the project's __init__ file
+# pylint: disable=no-name-in-module
 from __init__ import DATASET_DIR, LOGGING_DIR, HTM_DIR
 
 # Set urllib3 logging level to critical to reduce noise

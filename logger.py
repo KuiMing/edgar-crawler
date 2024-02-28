@@ -1,6 +1,7 @@
 import os
 import logging
 from time import strftime, gmtime
+# pylint: disable=no-name-in-module
 from __init__ import LOGGING_DIR
 
 
@@ -9,7 +10,7 @@ class Logger:
     Creates and initializes a logger using the `logging` Python module
     """
 
-    # TODO: Modify filename to *.log
+    # to-do: Modify filename to *.log
 
     def __init__(self, name, filename="log.txt"):
         """
